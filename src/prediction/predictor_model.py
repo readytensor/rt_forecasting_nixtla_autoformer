@@ -3,7 +3,6 @@ import warnings
 import joblib
 import numpy as np
 import pandas as pd
-from typing import List
 from schema.data_schema import ForecastingSchema
 from sklearn.exceptions import NotFittedError
 from neuralforecast.models import Autoformer
@@ -32,24 +31,23 @@ class Forecaster:
         self,
         data_schema: ForecastingSchema,
         history_forecast_ratio: int = None,
-        lags_forecast_ratio: int = None,
-        lags: int = None,
+        lags_forecast_ratio: int = 4,
         exclude_insample_y=False,
         decoder_input_size_multiplier: float = 0.5,
-        hidden_size: int = 128,
+        hidden_size: int = 32,
         dropout: float = 0.05,
         factor: int = 3,
-        n_head: int = 4,
+        n_head: int = 1,
         conv_hidden_size: int = 32,
         activation: str = "gelu",
-        encoder_layers: int = 2,
+        encoder_layers: int = 1,
         decoder_layers: int = 1,
-        max_steps: int = 5000,
-        learning_rate: float = 0.001,
+        max_steps: int = 500,
+        learning_rate: float = 1e-3,
         num_lr_decays: int = -1,
         batch_size: int = 32,
-        early_stopping: bool = False,
-        early_stop_patience_steps: int = 50,
+        early_stopping: bool = True,
+        early_stop_patience_steps: int = 30,
         min_delta: float = 0.0005,
         local_scaler_type: str = None,
         use_exogenous: bool = True,
@@ -73,8 +71,6 @@ class Forecaster:
                 Sets the lags parameters depending on the forecast horizon.
                 lags = forecast horizon * lags_forecast_ratio
                 This parameters overides lags parameter and uses the most recent values as lags.
-
-            lags (int): Lags of the target to use as features.
 
             exclude_insample_y (bool): The model skips the autoregressive features y[t-input_size:t] if True.
 
@@ -119,7 +115,6 @@ class Forecaster:
             random_state (int): Sets the underlying random seed at model initialization time.
         """
         self.data_schema = data_schema
-        self.lags = lags
         self.exclude_insample_y = exclude_insample_y
         self.decoder_input_size_multiplier = decoder_input_size_multiplier
         self.hidden_size = hidden_size
@@ -146,8 +141,7 @@ class Forecaster:
                 self.data_schema.forecast_length * history_forecast_ratio
             )
 
-        if lags_forecast_ratio:
-            self.lags = lags_forecast_ratio * self.data_schema.forecast_length
+        self.lags = int(lags_forecast_ratio * self.data_schema.forecast_length)
 
         stopper = EarlyStopping(
             monitor="train_loss",
