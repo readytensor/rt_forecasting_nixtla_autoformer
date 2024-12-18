@@ -11,7 +11,7 @@
   "max_steps": 2000,
   "learning_rate": 0.001,
   "batch_size": 32,
-  "num_lr_decays": 2,
+  "num_lr_decays": -1,
   "local_scaler_type": "robust",
   "early_stopping": true,
   "use_exogenous": true,
